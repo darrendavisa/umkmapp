@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -10,54 +11,22 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _apiService = ApiService();
+  bool _loading = false;
 
-  void _prosesLogin() {
-    if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Login berhasil (dummy)')));
+  Future<void> _prosesLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _loading = true);
+    try {
+      await _apiService.login(_emailController.text, _passwordController.text);
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/home');
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
-  }
-
-  Widget _buildEmailField() {
-    return TextFormField(
-      controller: _emailController,
-      decoration: const InputDecoration(
-        labelText: 'Email',
-        border: OutlineInputBorder(),
-      ),
-      validator: (v) => (v == null || v.isEmpty) ? 'Email wajib diisi' : null,
-    );
-  }
-
-  Widget _buildPasswordField() {
-    return TextFormField(
-      controller: _passwordController,
-      obscureText: true,
-      decoration: const InputDecoration(
-        labelText: 'Password',
-        border: OutlineInputBorder(),
-      ),
-      validator: (v) =>
-          (v == null || v.length < 6) ? 'Password minimal 6 karakter' : null,
-    );
-  }
-
-  Widget _buildLoginButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: _prosesLogin,
-        child: const Text('Masuk'),
-      ),
-    );
-  }
-
-  Widget _buildRegisterLink() {
-    return TextButton(
-      onPressed: () => Navigator.pushNamed(context, '/register'),
-      child: const Text('Belum memiliki akun? Daftar di sini'),
-    );
   }
 
   @override
@@ -71,13 +40,33 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildEmailField(),
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
+                validator: (v) => (v == null || v.isEmpty) ? 'Email wajib diisi' : null,
+              ),
               const SizedBox(height: 16),
-              _buildPasswordField(),
+              TextFormField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder()),
+                validator: (v) => (v == null || v.length < 6) ? 'Password minimal 6 karakter' : null,
+              ),
               const SizedBox(height: 24),
-              _buildLoginButton(),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _loading ? null : _prosesLogin,
+                  child: _loading
+                      ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Text('Masuk'),
+                ),
+              ),
               const SizedBox(height: 12),
-              _buildRegisterLink(),
+              TextButton(
+                onPressed: () => Navigator.pushNamed(context, '/register'),
+                child: const Text('Belum memiliki akun? Daftar di sini'),
+              ),
             ],
           ),
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/token_storage.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -10,28 +11,20 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/login');
-      }
-    });
+    _cekTokenTersimpan();
+  }
+
+  Future<void> _cekTokenTersimpan() async {
+    final token = await TokenStorage.ambil();
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(context, token == null ? '/login' : '/home');
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       backgroundColor: Colors.indigo,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.school, color: Colors.white, size: 80),
-            SizedBox(height: 16),
-            Text('SI FIK UBL',
-              style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-          ],
-        ),
-      ),
+      body: Center(child: CircularProgressIndicator(color: Colors.white)),
     );
   }
 }
